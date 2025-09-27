@@ -10,7 +10,7 @@ class Task(models.Model):
     class Status(models.TextChoices):
         TODO = "todo", "Do zrobienia"
         IN_PROGRESS = "in_progress", "W toku"
-        REVIEW = "review", "Przegląd"
+        REVIEW = "review", "Weryfikacja"
         DONE = "done", "Zrobione"
         BLOCKED = "blocked", "Zablokowane"
 
@@ -54,7 +54,7 @@ class Task(models.Model):
         verbose_name="Postęp (%)",
     )
     sort_index = models.PositiveIntegerField(
-        default=0, verbose_name="Indeks sortowania"
+        default=0, verbose_name="Indeks sortowania", editable=False
     )
 
     estimated_hours = models.DecimalField(

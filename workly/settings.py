@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "dashboard",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -143,4 +144,12 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 25,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Workly API",
+    "DESCRIPTION": "API do projektów, zadań, zależności i dashboardu.",
+    "VERSION": "0.1.0",
+    # "SERVERS": [{"url": "http://127.0.0.1:8000", "description": "Dev"}],
 }

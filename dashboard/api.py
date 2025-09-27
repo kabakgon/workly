@@ -9,6 +9,10 @@ from tasks.models import Task
 from projects.serializers import ProjectSerializer
 from tasks.serializers import TaskSerializer
 
+from datetime import date, timedelta
+from django.utils.dateparse import parse_date
+from rest_framework.permissions import IsAuthenticated
+
 
 class MyProjectsList(generics.ListAPIView):
     serializer_class = ProjectSerializer
@@ -76,5 +80,49 @@ class DashboardSummary(APIView):
                 "my_tasks_count": my_tasks_qs.count(),
                 "my_tasks_by_status": by_status,
                 "next_task": next_task,
+            }
+        )
+
+
+class MyTimelineView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        u = request.user
+        days = int(request.GET.get("days", 14))
+        start_str = request.GET.get("from")
+        start = parse_date(start_str) if start_str else date.today()
+        end = start + timedelta(days=days)
+
+        # Zadania przypisane do mnie, które nachodzą na okno [start, end]
+        qs = (
+            Task.objects.filter(assignee=u)
+            .filter(Q(start_date__lte=end) & Q(end_date__gte=start))
+            .select_related("project", "parent")
+            .order_by("start_date", "sort_index", "id")
+        )
+
+        data = [
+            {
+                "id": t.id,
+                "text": f"{t.title}",
+                "project": getattr(t.project, "id", None),
+                "start_date": t.start_date.isoformat() if t.start_date else None,
+                "end_date": t.end_date.isoformat() if t.end_date else None,
+                "progress": (t.progress or 0) / 100.0,
+                "parent": t.parent_id,
+                "status": t.status,
+            }
+            for t in qs
+        ]
+
+        return Response(
+            {
+                "window": {
+                    "start": start.isoformat(),
+                    "end": end.isoformat(),
+                    "days": days,
+                },
+                "data": data,
             }
         )

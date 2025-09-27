@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "tasks",
     "rest_framework",
     "django_filters",
+    "dashboard",
 ]
 
 MIDDLEWARE = [

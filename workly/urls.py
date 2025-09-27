@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from projects.api import ProjectViewSet
 from tasks.api import TaskViewSet, DependencyViewSet
-from gantt.api import GanttProjectView  # dodamy w następnym kroku plik
+from gantt.api import GanttProjectView
 
 router = DefaultRouter()
 router.register(r"projects", ProjectViewSet, basename="project")
@@ -17,4 +17,5 @@ urlpatterns = [
     path(
         "api/projects/<int:pk>/gantt/", GanttProjectView.as_view(), name="project-gantt"
     ),
+    path("api/", include(("dashboard.urls", "dashboard"), namespace="dashboard")),
 ]

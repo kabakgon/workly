@@ -9,6 +9,18 @@ User = get_user_model()
 
 
 class Task(models.Model):
+    def clean(self):
+        # Walidacja dat: start_date <= end_date
+        if self.start_date and self.end_date:
+            if self.start_date > self.end_date:
+                raise ValidationError(
+                    {
+                        "end_date": "Data zakończenia nie może być wcześniejsza niż data rozpoczęcia."
+                    }
+                )
+        # Możesz dodać dodatkowe walidacje, np. daty nie w przeszłości
+        super().clean()
+
     class Status(models.TextChoices):
         TODO = "todo", "Do zrobienia"
         IN_PROGRESS = "in_progress", "W toku"
@@ -153,6 +165,23 @@ class Dependency(models.Model):
                 raise ValidationError(
                     "Oba zadania w zależności muszą należeć do tego samego projektu."
                 )
+            # Walidacja cykli zależności
+            # Sprawdź, czy successor nie jest pośrednio poprzednikiem predecessor
+            visited = set()
+
+            def dfs(task):
+                if task.id in visited:
+                    return False
+                visited.add(task.id)
+                for dep in Dependency.objects.filter(predecessor=task):
+                    if dep.successor_id == self.predecessor_id:
+                        return True
+                    if dfs(dep.successor):
+                        return True
+                return False
+
+            if dfs(self.successor):
+                raise ValidationError("Dodanie tej zależności spowodowałoby cykl.")
 
     def save(self, *args, **kwargs):
         self.full_clean()

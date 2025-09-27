@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django.db.models.deletion import ProtectedError
 from .models import Project
 from .serializers import ProjectSerializer
+from .permissions import IsProjectOwnerOrReadOnly
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -34,3 +35,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 {"detail": "Nie można usunąć projektu, który ma przypięte zadania."},
                 status=status.HTTP_409_CONFLICT,
             )
+
+
+class ProjectViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsProjectOwnerOrReadOnly]

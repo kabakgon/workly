@@ -1,18 +1,18 @@
-from rest_framework import viewsets, filters, status
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.response import Response
-from rest_framework.decorators import action
-from django.db.models.deletion import ProtectedError
-from django.db import transaction
-from .models import Task, Dependency
-from .serializers import TaskSerializer, DependencySerializer
-from rest_framework import status
 from django.db import transaction
 from django.db.models import Max
+from django.db.models.deletion import ProtectedError
+from django_filters.rest_framework import DjangoFilterBackend
 from projects.models import Project
+from rest_framework import filters, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from .models import Dependency, Task
+from .serializers import DependencySerializer, TaskSerializer
+from .permissions import IsAssigneeOrProjectOwnerOrReadOnly
 
 
 class TaskViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAssigneeOrProjectOwnerOrReadOnly]
     queryset = Task.objects.select_related("project", "assignee", "parent").all()
     serializer_class = TaskSerializer
     filter_backends = [
@@ -42,28 +42,6 @@ class TaskViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_409_CONFLICT,
             )
-
-
-class DependencyViewSet(viewsets.ModelViewSet):
-    queryset = Dependency.objects.select_related("predecessor", "successor").all()
-    serializer_class = DependencySerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["predecessor", "successor", "type"]
-
-    def destroy(self, request, *args, **kwargs):
-        try:
-            return super().destroy(request, *args, **kwargs)
-        except ProtectedError:
-            return Response(
-                {
-                    "detail": "Nie można usunąć zadania z istniejącymi zależnościami (predecessor/successor). Usuń najpierw zależności."
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
-
-
-class TaskViewSet(viewsets.ModelViewSet):
-    # ... istniejący kod ...
 
     @action(detail=True, methods=["post"])
     def copy(self, request, pk=None):
@@ -127,9 +105,18 @@ class TaskViewSet(viewsets.ModelViewSet):
                         clone_children(ch, ch_clone)
 
                 clone_children(src, new_root)
-
             return new_root
 
         new_task = perform_copy()
         serializer = self.get_serializer(new_task)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class DependencyViewSet(viewsets.ModelViewSet):
+    queryset = Dependency.objects.select_related("from_task", "to_task").all()
+    serializer_class = DependencySerializer
+
+    def get_permissions(self):
+        from projects.permissions import IsProjectOwnerOrReadOnly
+
+        return [IsProjectOwnerOrReadOnly()]

@@ -17,13 +17,13 @@ class Task(models.Model):
         BLOCKED = "blocked", "Zablokowane"
 
     project = models.ForeignKey(
-        Project, on_delete=models.CASCADE, related_name="tasks", verbose_name="Projekt"
+        Project, on_delete=models.PROTECT, related_name="tasks", verbose_name="Projekt"
     )
     parent = models.ForeignKey(
         "self",
         null=True,
         blank=True,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="children",
         verbose_name="Zadanie nadrzędne",
     )
@@ -102,13 +102,13 @@ class Dependency(models.Model):
 
     predecessor = models.ForeignKey(
         Task,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="as_predecessor",
         verbose_name="Poprzednik",
     )
     successor = models.ForeignKey(
         Task,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="as_successor",
         verbose_name="Następnik",
     )

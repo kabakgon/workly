@@ -1,0 +1,14 @@
+{
+  "name": "workly-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Workly 2.0 with Tailwind CSS and DaisyUI",
+  "scripts": {
+    "build-css": "tailwindcss -i ./static/src/input.css -o ./static/css/output.css --minify",
+    "watch-css": "tailwindcss -i ./static/src/input.css -o ./static/css/output.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1",
+    "daisyui": "^4.4.19"
+  }
+}
+

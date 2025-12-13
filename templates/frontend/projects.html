@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Projekty - Workly 2.0{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Remove selection/highlight on date inputs */
+    input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    input[type="date"]::-webkit-datetime-edit-text,
+    input[type="date"]::-webkit-datetime-edit-month-field,
+    input[type="date"]::-webkit-datetime-edit-day-field,
+    input[type="date"]::-webkit-datetime-edit-year-field {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    /* Remove focus outline on date picker parts */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+    }
+    
+    input[type="date"]::-webkit-calendar-picker-indicator:focus {
+        outline: none;
+    }
+    
+    /* Ensure error state is visible */
+    input[type="date"].input-error {
+        border-color: hsl(var(--er));
+        border-width: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <div>
+        <h1 class="text-3xl font-bold">Projekty</h1>
+        <p class="text-base-content/70">Zarządzaj swoimi projektami</p>
+    </div>
+    <button onclick="document.getElementById('create-project-modal').showModal()" class="btn btn-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Nowy projekt
+    </button>
+</div>
+
+<!-- Filters -->
+<div class="card bg-base-200 shadow-lg mb-6">
+    <div class="card-body">
+        <div class="flex flex-wrap gap-4">
+            <select id="filter-status" class="select select-bordered">
+                <option value="">Wszystkie statusy</option>
+                <option value="planned">Planowany</option>
+                <option value="active">Aktywny</option>
+                <option value="on_hold">Wstrzymany</option>
+                <option value="done">Zakończony</option>
+                <option value="archived">Zarchiwizowany</option>
+            </select>
+            <select id="filter-priority" class="select select-bordered">
+                <option value="">Wszystkie priorytety</option>
+                <option value="1">Niski</option>
+                <option value="2">Średni</option>
+                <option value="3">Wysoki</option>
+                <option value="4">Krytyczny</option>
+            </select>
+            <input type="text" id="search-input" placeholder="Szukaj..." class="input input-bordered flex-1" />
+        </div>
+    </div>
+</div>
+
+<!-- Projects List -->
+<div id="projects-content">
+    <div class="flex justify-center items-center h-64">
+        <span class="loading loading-spinner loading-lg"></span>
+    </div>
+</div>
+
+<!-- Create Project Modal -->
+<dialog id="create-project-modal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">Nowy projekt</h3>
+        <form id="create-project-form" class="mt-4 space-y-4">
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Nazwa projektu <span class="text-error">*</span></span>
+                </label>
+                <input type="text" name="name" id="project-name" class="input input-bordered" required />
+                <label class="label hidden" id="name-error-label">
+                    <span class="label-text-alt text-error"></span>
+                </label>
+            </div>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Opis</span>
+                </label>
+                <textarea name="description" class="textarea textarea-bordered"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Data rozpoczęcia <span class="text-error">*</span></span>
+                    </label>
+                    <input type="date" name="start_date" id="start-date" class="input input-bordered" required placeholder="dd.mm.rrrr" value="{% now 'Y-m-d' %}" />
+                </div>
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Data zakończenia <span class="text-error">*</span></span>
+                    </label>
+                    <input type="date" name="end_date" id="end-date" class="input input-bordered" required placeholder="dd.mm.rrrr" />
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Status <span class="text-error">*</span></span>
+                    </label>
+                    <select name="status" id="project-status" class="select select-bordered">
+                        <option value="planned">Planowany</option>
+                        <option value="active" selected>Aktywny</option>
+                        <option value="on_hold">Wstrzymany</option>
+                        <option value="done">Zakończony</option>
+                        <option value="archived">Zarchiwizowany</option>
+                    </select>
+                    <label class="label hidden" id="status-error-label">
+                        <span class="label-text-alt text-error"></span>
+                    </label>
+                </div>
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Priorytet <span class="text-error">*</span></span>
+                    </label>
+                    <select name="priority" id="project-priority" class="select select-bordered">
+                        <option value="1">Niski</option>
+                        <option value="2" selected>Średni</option>
+                        <option value="3">Wysoki</option>
+                        <option value="4">Krytyczny</option>
+                    </select>
+                    <label class="label hidden" id="priority-error-label">
+                        <span class="label-text-alt text-error"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-action">
+                <button type="button" onclick="document.getElementById('create-project-modal').close()" class="btn">Anuluj</button>
+                <button type="submit" class="btn btn-primary">Utwórz</button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>zamknij</button>
+    </form>
+</dialog>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/projects.js' %}" defer></script>
+{% endblock %}
+

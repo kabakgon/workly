@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100">
+  <!-- Fioletowe tło -->
+  <rect width="300" height="100" rx="12" fill="#8b5cf6"/>
+  
+  <!-- Ikona kalendarza z checkmarkiem -->
+  <g transform="translate(20, 20)">
+    <!-- Górne zakładki -->
+    <rect x="10" y="0" width="14" height="10" rx="2" fill="white" opacity="0.9"/>
+    <rect x="28" y="-2" width="14" height="12" rx="2" fill="white"/>
+    
+    <!-- Główny kontener -->
+    <rect x="5" y="12" width="50" height="48" rx="4" fill="none" stroke="white" stroke-width="3"/>
+    
+    <!-- Checkmark -->
+    <path d="M 18 32 L 28 42 L 42 28" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+  
+  <!-- Tekst "Workly" -->
+  <text x="90" y="60" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white">Workly</text>
+</svg>
+

@@ -21,6 +21,7 @@ urlpatterns = [
         "api/projects/<int:pk>/gantt/", GanttProjectView.as_view(), name="project-gantt"
     ),
     path("api/", include(("dashboard.urls", "dashboard"), namespace="dashboard")),
+    path("", include(("frontend.urls", "frontend"), namespace="frontend")),
 ]
 
 urlpatterns += [

@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Workly 2.0{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold">Dashboard</h1>
+    <p class="text-base-content/70">Przegląd Twoich projektów i zadań</p>
+</div>
+
+<div id="dashboard-content" class="space-y-6">
+    <!-- Loading state -->
+    <div class="flex justify-center items-center h-64">
+        <span class="loading loading-spinner loading-lg"></span>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        // Load summary
+        const summary = await window.WorklyAPI.request('/my/summary/');
+        
+        // Load my projects
+        const projectsResponse = await window.WorklyAPI.request('/my/projects/');
+        const projects = projectsResponse.results || projectsResponse;
+        
+        // Load my tasks
+        const tasksResponse = await window.WorklyAPI.request('/my/tasks/');
+        const tasks = tasksResponse.results || tasksResponse;
+        
+        // Render dashboard
+        const content = document.getElementById('dashboard-content');
+        content.innerHTML = `
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="stat bg-base-200 rounded-lg shadow">
+                    <div class="stat-title">Moje Projekty</div>
+                    <div class="stat-value text-primary">${summary.my_projects_count || 0}</div>
+                </div>
+                <div class="stat bg-base-200 rounded-lg shadow">
+                    <div class="stat-title">Moje Zadania</div>
+                    <div class="stat-value text-secondary">${summary.my_tasks_count || 0}</div>
+                </div>
+                <div class="stat bg-base-200 rounded-lg shadow">
+                    <div class="stat-title">Do zrobienia</div>
+                    <div class="stat-value text-info">${summary.my_tasks_by_status?.find(s => s.status === 'todo')?.count || 0}</div>
+                </div>
+                <div class="stat bg-base-200 rounded-lg shadow">
+                    <div class="stat-title">W toku</div>
+                    <div class="stat-value text-warning">${summary.my_tasks_by_status?.find(s => s.status === 'in_progress')?.count || 0}</div>
+                </div>
+            </div>
+            
+            <!-- Next Task -->
+            ${summary.next_task ? `
+            <div class="card bg-base-200 shadow-lg">
+                <div class="card-body">
+                    <h2 class="card-title">Następne zadanie</h2>
+                    <p class="text-lg font-semibold">${summary.next_task.title}</p>
+                    <p class="text-sm text-base-content/70">
+                        Data rozpoczęcia: ${window.WorklyAPI.formatDate(summary.next_task.start_date)}
+                    </p>
+                    <div class="card-actions justify-end">
+                        <a href="{% url 'frontend:tasks_list' %}?my_tasks=true" class="btn btn-primary btn-sm">Zobacz zadania</a>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- Recent Projects -->
+            <div class="card bg-base-200 shadow-lg">
+                <div class="card-body">
+                    <h2 class="card-title">Moje Projekty</h2>
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra">
+                            <thead>
+                                <tr>
+                                    <th>Nazwa</th>
+                                    <th>Status</th>
+                                    <th>Priorytet</th>
+                                    <th>Zadania</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${projects.length > 0 ? projects.slice(0, 5).map(project => `
+                                    <tr>
+                                        <td>
+                                            <a href="/projects/${project.id}/" class="link link-primary font-semibold">
+                                                ${project.name}
+                                            </a>
+                                        </td>
+                                        <td>${window.WorklyAPI.getStatusBadge(project.status, 'project')}</td>
+                                        <td>${window.WorklyAPI.getPriorityBadge(project.priority)}</td>
+                                        <td>${project.tasks_count || 0}</td>
+                                        <td>
+                                            <a href="/projects/${project.id}/" class="btn btn-sm btn-ghost">Zobacz</a>
+                                        </td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="5" class="text-center">Brak projektów</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                    ${projects.length > 5 ? `
+                    <div class="card-actions justify-end mt-4">
+                        <a href="/projects/" class="btn btn-primary btn-sm">Zobacz wszystkie</a>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            <!-- Recent Tasks -->
+            <div class="card bg-base-200 shadow-lg">
+                <div class="card-body">
+                    <h2 class="card-title">Moje Zadania</h2>
+                    <div class="overflow-x-auto">
+                        <table class="table table-zebra">
+                            <thead>
+                                <tr>
+                                    <th>Tytuł</th>
+                                    <th>Projekt</th>
+                                    <th>Status</th>
+                                    <th>Postęp</th>
+                                    <th>Termin</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tasks.length > 0 ? tasks.slice(0, 5).map(task => `
+                                    <tr>
+                                        <td class="font-semibold">${task.title}</td>
+                                        <td>${task.project || '-'}</td>
+                                        <td>${window.WorklyAPI.getStatusBadge(task.status, 'task')}</td>
+                                        <td>
+                                            <div class="flex items-center gap-2">
+                                                <progress class="progress progress-primary w-20" value="${task.progress || 0}" max="100"></progress>
+                                                <span class="text-sm">${task.progress || 0}%</span>
+                                            </div>
+                                        </td>
+                                        <td>${window.WorklyAPI.formatDate(task.end_date)}</td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="5" class="text-center">Brak zadań</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                    ${tasks.length > 5 ? `
+                    <div class="card-actions justify-end mt-4">
+                        <a href="/tasks/" class="btn btn-primary btn-sm">Zobacz wszystkie</a>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        document.getElementById('dashboard-content').innerHTML = `
+            <div class="alert alert-error">
+                <span>Błąd podczas ładowania danych: ${error.message}</span>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}
+

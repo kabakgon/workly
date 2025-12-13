@@ -1,16 +1,54 @@
 # Python
 __pycache__/
-*.pyc
-*.pyo
-
-# Env
-.venv/
-.env
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
 # Django
+*.log
+local_settings.py
 db.sqlite3
-staticfiles/
-media/
+db.sqlite3-journal
+/staticfiles/
+/media/
 
-# VS Code
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Tailwind
+static/css/output.css
+
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

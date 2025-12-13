@@ -8,6 +8,7 @@ from .permissions import IsProjectOwnerOrReadOnly
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsProjectOwnerOrReadOnly]
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     filter_backends = [
@@ -35,7 +36,3 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 {"detail": "Nie można usunąć projektu, który ma przypięte zadania."},
                 status=status.HTTP_409_CONFLICT,
             )
-
-
-class ProjectViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsProjectOwnerOrReadOnly]

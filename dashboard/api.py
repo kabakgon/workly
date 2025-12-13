@@ -3,6 +3,7 @@ from rest_framework import generics, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.contrib.auth import get_user_model
 
 from projects.models import Project
 from tasks.models import Task
@@ -12,6 +13,8 @@ from tasks.serializers import TaskSerializer
 from datetime import date, timedelta
 from django.utils.dateparse import parse_date
 from rest_framework.permissions import IsAuthenticated
+
+User = get_user_model()
 
 
 class MyProjectsList(generics.ListAPIView):
@@ -126,3 +129,37 @@ class MyTimelineView(APIView):
                 "data": data,
             }
         )
+
+
+class UsersListView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Zwraca listę wszystkich użytkowników (id, username)"""
+        users = User.objects.all().order_by('username')
+        data = [
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": getattr(user, 'email', ''),
+            }
+            for user in users
+        ]
+        return Response(data)
+
+
+class UsersListView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Zwraca listę wszystkich użytkowników (id, username)"""
+        users = User.objects.all().order_by('username')
+        data = [
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": getattr(user, 'email', ''),
+            }
+            for user in users
+        ]
+        return Response(data)

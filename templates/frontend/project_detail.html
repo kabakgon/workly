@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Szczegóły projektu - Workly 2.0{% endblock %}
+
+{% block content %}
+<div id="project-detail-content">
+    <div class="flex justify-center items-center h-64">
+        <span class="loading loading-spinner loading-lg"></span>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const projectId = {{ project_id }};
+const projectsListUrl = "{% url 'frontend:projects_list' %}";
+const projectGanttUrl = (id) => `/projects/${id}/gantt/`;
+
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const project = await window.WorklyAPI.request(`/projects/${projectId}/`);
+        const tasks = await window.WorklyAPI.request(`/tasks/?project=${projectId}`);
+        const taskList = tasks.results || tasks;
+        
+        const content = document.getElementById('project-detail-content');
+        content.innerHTML = `
+            <div class="mb-6">
+                <a href="${projectsListUrl}" class="btn btn-ghost btn-sm mb-4">← Powrót do projektów</a>
+                <h1 class="text-3xl font-bold">${project.name}</h1>
+                <p class="text-base-content/70">${project.description || 'Brak opisu'}</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="card bg-base-200 shadow-lg">
+                        <div class="card-body">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="card-title">Zadania projektu</h2>
+                                <button onclick="document.getElementById('create-task-modal').showModal()" class="btn btn-primary btn-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Dodaj zadanie
+                                </button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="table table-zebra">
+                                    <thead>
+                                        <tr>
+                                            <th>Tytuł</th>
+                                            <th>Status</th>
+                                            <th>Postęp</th>
+                                            <th>Przypisany</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${taskList.length > 0 ? taskList.map(task => `
+                                            <tr>
+                                                <td class="font-semibold">${task.title}</td>
+                                                <td>${window.WorklyAPI.getStatusBadge(task.status, 'task')}</td>
+                                                <td>
+                                                    <progress class="progress progress-primary w-20" value="${task.progress || 0}" max="100"></progress>
+                                                </td>
+                                                <td>${task.assignee || '-'}</td>
+                                            </tr>
+                                        `).join('') : '<tr><td colspan="4" class="text-center">Brak zadań</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-6">
+                    <div class="card bg-base-200 shadow-lg">
+                        <div class="card-body">
+                            <h2 class="card-title">Informacje</h2>
+                            <div class="space-y-2">
+                                <p><strong>Status:</strong> ${window.WorklyAPI.getStatusBadge(project.status, 'project')}</p>
+                                <p><strong>Priorytet:</strong> ${window.WorklyAPI.getPriorityBadge(project.priority)}</p>
+                                <p><strong>Data rozpoczęcia:</strong> ${window.WorklyAPI.formatDate(project.start_date)}</p>
+                                <p><strong>Data zakończenia:</strong> ${window.WorklyAPI.formatDate(project.end_date)}</p>
+                                <p><strong>Liczba zadań:</strong> ${project.tasks_count || 0}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card bg-base-200 shadow-lg">
+                        <div class="card-body">
+                            <h2 class="card-title">Akcje</h2>
+                            <div class="space-y-2">
+                                <a href="${projectGanttUrl(project.id)}" class="btn btn-primary btn-block">Diagram Gantta</a>
+                                <button class="btn btn-ghost btn-block">Edytuj projekt</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Setup task modal after content is rendered
+        setupTaskModalForProject(projectId, taskList);
+    } catch (error) {
+        document.getElementById('project-detail-content').innerHTML = `
+            <div class="alert alert-error">
+                <span>Błąd podczas ładowania projektu: ${error.message}</span>
+            </div>
+        `;
+    }
+});
+
+function setupTaskModalForProject(projectId, taskList) {
+    // Add modal HTML if not exists
+    if (!document.getElementById('create-task-modal')) {
+        const modalHTML = `
+            <dialog id="create-task-modal" class="modal">
+                <div class="modal-box">
+                    <h3 class="font-bold text-lg">Nowe zadanie</h3>
+                    <form id="create-task-form" class="mt-4 space-y-4">
+                        <input type="hidden" name="project" id="task-project" value="${projectId}" />
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Tytuł <span class="text-error">*</span></span>
+                            </label>
+                            <input type="text" name="title" id="task-title" class="input input-bordered" required maxlength="160" />
+                            <label class="label hidden" id="title-error-label">
+                                <span class="label-text-alt text-error"></span>
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Opis</span>
+                            </label>
+                            <textarea name="description" id="task-description" class="textarea textarea-bordered"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Data rozpoczęcia</span>
+                                </label>
+                                <input type="date" name="start_date" id="task-start-date" class="input input-bordered" placeholder="dd.mm.rrrr" />
+                            </div>
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Data zakończenia</span>
+                                </label>
+                                <input type="date" name="end_date" id="task-end-date" class="input input-bordered" placeholder="dd.mm.rrrr" />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Status</span>
+                                </label>
+                                <select name="status" id="task-status" class="select select-bordered">
+                                    <option value="todo" selected>Do zrobienia</option>
+                                    <option value="in_progress">W toku</option>
+                                    <option value="review">Weryfikacja</option>
+                                    <option value="done">Zrobione</option>
+                                    <option value="blocked">Zablokowane</option>
+                                </select>
+                            </div>
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Postęp (%)</span>
+                                </label>
+                                <input type="number" name="progress" id="task-progress" class="input input-bordered" min="0" max="100" value="0" />
+                            </div>
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Zadanie nadrzędne</span>
+                            </label>
+                            <select name="parent" id="task-parent" class="select select-bordered">
+                                <option value="">Brak (zadanie główne)</option>
+                            </select>
+                        </div>
+                        <div class="modal-action">
+                            <button type="button" onclick="document.getElementById('create-task-modal').close()" class="btn">Anuluj</button>
+                            <button type="submit" class="btn btn-primary">Utwórz</button>
+                        </div>
+                    </form>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                    <button>zamknij</button>
+                </form>
+            </dialog>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Populate parent tasks dropdown
+        const parentSelect = document.getElementById('task-parent');
+        if (parentSelect && taskList) {
+            taskList.filter(t => !t.parent).forEach(task => {
+                const option = document.createElement('option');
+                option.value = task.id;
+                option.textContent = task.title;
+                parentSelect.appendChild(option);
+            });
+        }
+        
+        // Setup form handler
+        const form = document.getElementById('create-task-form');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData);
+                
+                // Convert empty strings to null for optional fields
+                if (!data.parent) data.parent = null;
+                if (!data.start_date) data.start_date = null;
+                if (!data.end_date) data.end_date = null;
+                if (!data.description) data.description = '';
+                
+                // Convert to integers
+                if (data.progress) data.progress = parseInt(data.progress);
+                if (data.parent) data.parent = parseInt(data.parent);
+                data.project = parseInt(data.project);
+                
+                try {
+                    await window.WorklyAPI.request('/tasks/', {
+                        method: 'POST',
+                        body: JSON.stringify(data),
+                    });
+                    
+                    document.getElementById('create-task-modal').close();
+                    form.reset();
+                    // Reload page to show new task
+                    location.reload();
+                } catch (error) {
+                    alert('Błąd podczas tworzenia zadania: ' + error.message);
+                }
+            });
+        }
+    }
+}
+</script>
+{% endblock %}
+

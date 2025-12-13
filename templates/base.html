@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="synthwave">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Workly 2.0{% endblock %}</title>
+    {% load static %}
+    <link href="{% static 'css/output.css' %}" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    {% block extra_css %}{% endblock %}
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body>
+    <div class="drawer lg:drawer-open">
+        <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+        
+        <!-- Sidebar -->
+        <div class="drawer-side">
+            <label for="drawer-toggle" class="drawer-overlay"></label>
+            <aside class="w-64 min-h-full bg-base-200 flex flex-col">
+                <div class="p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <img src="{% static 'img/logo-icon.svg' %}" alt="Workly" class="h-8 w-8" />
+                        <h1 class="text-2xl font-bold text-primary">Workly 2.0</h1>
+                    </div>
+                    <p class="text-sm text-base-content/70">Zarządzanie projektami</p>
+                </div>
+                <ul class="menu p-4 w-full flex-1">
+                    <li>
+                        <a href="{% url 'frontend:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'frontend:projects_list' %}" class="{% if request.resolver_match.url_name == 'projects_list' %}active{% endif %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                            Projekty
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'frontend:tasks_list' %}" class="{% if request.resolver_match.url_name == 'tasks_list' %}active{% endif %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            Zadania
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'docs' %}" target="_blank">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                            </svg>
+                            API Docs
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Przełącznik motywów -->
+                <div class="p-4 border-t border-base-300 mt-auto">
+                    <div class="dropdown dropdown-top">
+                        <label tabindex="0" class="btn btn-sm btn-ghost w-full justify-start">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                            </svg>
+                            <span class="text-xs">Motyw</span>
+                        </label>
+                        <ul tabindex="0" class="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box w-52 z-50 mb-2">
+                            <li><a onclick="setTheme('synthwave')" class="theme-item">Synthwave</a></li>
+                            <li><a onclick="setTheme('worklyLight')" class="theme-item">Jasny</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="p-4 border-t border-base-300">
+                    {% if user.is_authenticated %}
+                    <div class="flex items-center gap-2 p-2 bg-base-300 rounded-lg">
+                        <div class="avatar placeholder">
+                            <div class="bg-neutral text-neutral-content rounded-full w-8">
+                                <span class="text-xs">{{ user.username|first|upper }}</span>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold">{{ user.username }}</p>
+                            <p class="text-xs text-base-content/70">{{ user.email|default:"Brak email" }}</p>
+                        </div>
+                        <a href="{% url 'frontend:logout' %}" class="btn btn-sm btn-ghost">Wyloguj</a>
+                    </div>
+                    {% else %}
+                    <a href="{% url 'frontend:login' %}" class="btn btn-primary btn-block">Zaloguj się</a>
+                    {% endif %}
+                </div>
+            </aside>
+        </div>
+        
+        <!-- Main content -->
+        <div class="drawer-content flex flex-col">
+            <!-- Navbar -->
+            <div class="navbar bg-base-100 shadow-lg lg:hidden">
+                <div class="flex-none">
+                    <label for="drawer-toggle" class="btn btn-square btn-ghost">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </label>
+                </div>
+                <div class="flex-1 flex items-center gap-2">
+                    <img src="{% static 'img/logo-icon.svg' %}" alt="Workly" class="h-6 w-6" />
+                    <a class="btn btn-ghost text-xl">Workly 2.0</a>
+                </div>
+            </div>
+            
+            <!-- Page content -->
+            <main class="flex-1 p-6">
+                {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} mb-2">
+                        <span>{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% block content %}
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+    
+    {% block extra_js %}
+    {% endblock %}
+    
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        // Funkcja do ustawiania motywu
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('workly-theme', theme);
+            
+            // Aktualizuj aktywny element w menu
+            document.querySelectorAll('.theme-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.textContent.includes(theme === 'workly' ? 'Jasny' : 
+                                               theme === 'worklyDark' ? 'Ciemny' :
+                                               theme === 'worklyLight' ? 'Bardzo Jasny' :
+                                               theme === 'worklyPurple' ? 'Fioletowy' :
+                                               theme === 'dracula' ? 'Dracula' :
+                                               theme === 'synthwave' ? 'Synthwave' : '')) {
+                    item.classList.add('active');
+                }
+            });
+        }
+        
+        // Załaduj zapisany motyw przy starcie
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('workly-theme') || 'synthwave';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        });
+    </script>
+</body>
+</html>
+

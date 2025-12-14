@@ -23,7 +23,20 @@ http://127.0.0.1:8000/
 ```
 
 ### 5. Zaloguj się
-- Użyj konta administratora Django lub utwórz nowe konto przez `/admin/`
+- **Baza demo jest już wypełniona danymi!** Możesz od razu zalogować się jednym z kont demo:
+  - `anna_kowalska` / hasło: `1`
+  - `piotr_nowak` / hasło: `1`
+  - `maria_wisniewska` / hasło: `1`
+- Lub użyj konta administratora Django (utwórz przez `/admin/`)
+
+### 6. (Opcjonalnie) Odtwórz bazę demo
+Jeśli chcesz odtworzyć bazę demo od zera:
+```bash
+python manage.py setup_demo_data
+```
+
+To utworzy 3 użytkowników demo (hasło: `1`), 5 projektów i 50 zadań.
+Zobacz `README_DEMO.md` dla szczegółów.
 
 ## Struktura URL
 

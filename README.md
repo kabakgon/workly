@@ -14,7 +14,7 @@ Workly 2.0 to nowoczesny system do zarządzania projektami i zadaniami, zbudowan
 1. **Sklonuj repozytorium:**
 ```bash
 git clone <repo-url>
-cd Workly2.0
+cd workly
 ```
 
 2. **Zainstaluj zależności Python:**
@@ -167,7 +167,7 @@ Zobacz `README_TESTS.md` dla szczegółów.
 ## 📁 Struktura projektu
 
 ```
-Workly2.0/
+projekt/
 ├── accounts/          # Aplikacja użytkowników
 ├── projects/          # Aplikacja projektów
 ├── tasks/             # Aplikacja zadań

@@ -86,7 +86,6 @@
                         </div>
                         <div class="flex-1">
                             <p class="text-sm font-semibold">{{ user.username }}</p>
-                            <p class="text-xs text-base-content/70">{{ user.email|default:"Brak email" }}</p>
                         </div>
                         <a href="{% url 'frontend:logout' %}" class="btn btn-sm btn-ghost">Wyloguj</a>
                     </div>
@@ -161,7 +160,86 @@
             const savedTheme = localStorage.getItem('workly-theme') || 'synthwave';
             document.documentElement.setAttribute('data-theme', savedTheme);
         });
+        
+        // Global functions for confirmation and alert modals
+        window.showConfirmModal = function(message, onConfirm) {
+            const modal = document.getElementById('confirm-modal');
+            const messageEl = document.getElementById('confirm-message');
+            const confirmBtn = document.getElementById('confirm-btn');
+            const cancelBtn = document.getElementById('confirm-cancel-btn');
+            
+            if (!modal || !messageEl || !confirmBtn || !cancelBtn) return;
+            
+            messageEl.textContent = message;
+            
+            // Remove old event listeners by cloning
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+            
+            newConfirmBtn.addEventListener('click', () => {
+                modal.close();
+                if (onConfirm) onConfirm();
+            });
+            
+            newCancelBtn.addEventListener('click', () => {
+                modal.close();
+            });
+            
+            modal.showModal();
+        };
+        
+        window.showAlertModal = function(message, onClose) {
+            const modal = document.getElementById('alert-modal');
+            const messageEl = document.getElementById('alert-message');
+            const okBtn = document.getElementById('alert-ok-btn');
+            
+            if (!modal || !messageEl || !okBtn) return;
+            
+            messageEl.textContent = message;
+            
+            // Remove old event listeners by cloning
+            const newOkBtn = okBtn.cloneNode(true);
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+            
+            newOkBtn.addEventListener('click', () => {
+                modal.close();
+                if (onClose) onClose();
+            });
+            
+            modal.showModal();
+        };
     </script>
+    
+    <!-- Confirmation Modal -->
+    <dialog id="confirm-modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">Potwierdzenie</h3>
+            <p id="confirm-message" class="py-4"></p>
+            <div class="modal-action">
+                <button id="confirm-cancel-btn" class="btn">Anuluj</button>
+                <button id="confirm-btn" class="btn btn-error">Potwierdź</button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>zamknij</button>
+        </form>
+    </dialog>
+    
+    <!-- Alert Modal -->
+    <dialog id="alert-modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">Informacja</h3>
+            <p id="alert-message" class="py-4"></p>
+            <div class="modal-action">
+                <button id="alert-ok-btn" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>zamknij</button>
+        </form>
+    </dialog>
 </body>
 </html>
 

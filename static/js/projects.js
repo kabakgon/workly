@@ -1,5 +1,6 @@
 let allProjects = [];
 let currentPage = 1;
+let filterMyProjects = false; // Filter for "My Projects"
 
 async function loadProjects() {
     const content = document.getElementById('projects-content');
@@ -18,6 +19,12 @@ async function loadProjects() {
         
         let url = '/projects/';
         const params = [];
+        
+        // Add owner filter if "My Projects" is active
+        if (filterMyProjects && window.currentUserId) {
+            params.push(`owner=${window.currentUserId}`);
+        }
+        
         if (status) params.push(`status=${status}`);
         if (priority) params.push(`priority=${priority}`);
         if (search) params.push(`search=${encodeURIComponent(search)}`);
@@ -27,10 +34,7 @@ async function loadProjects() {
             url += '?' + params.join('&');
         }
         
-        console.log('Loading projects from:', url);
         const response = await window.WorklyAPI.request(url);
-        console.log('Projects response:', response);
-        
         allProjects = response.results || response || [];
         
         if (Array.isArray(allProjects)) {
@@ -81,7 +85,7 @@ function renderProjects() {
                         </div>
                         <div class="card-actions justify-end mt-4">
                             <a href="/projects/${project.id}/" class="btn btn-sm btn-primary">Zobacz</a>
-                            <a href="/projects/${project.id}/gantt/" class="btn btn-sm btn-ghost">Gantt</a>
+                            <button class="btn btn-sm btn-error" onclick="deleteProject(${project.id}, event)" data-project-name="${(project.name || '').replace(/"/g, '&quot;')}">Usuń</button>
                         </div>
                     </div>
                 </div>
@@ -130,6 +134,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
     });
     
+    // Setup "My Projects" filter button
+    setupFilterButton();
+    
+    // Load users for owner dropdown
+    loadUsersForProjectForm();
+    
     // Set default start date to today immediately
     const createModal = document.getElementById('create-project-modal');
     const startDateInput = document.getElementById('start-date');
@@ -167,16 +177,25 @@ document.addEventListener('DOMContentLoaded', function() {
         if (newProjectBtn) {
             newProjectBtn.addEventListener('click', () => {
                 setTimeout(setDefaultStartDate, 50);
+                setTimeout(setDefaultOwner, 50);
             });
         }
         
-        // Override showModal to set date
+        // Override showModal to set date and owner
         const originalShowModal = createModal.showModal;
         if (originalShowModal) {
             createModal.showModal = function() {
                 originalShowModal.call(this);
                 setTimeout(setDefaultStartDate, 10);
+                setTimeout(setDefaultOwner, 10);
             };
+        }
+        
+        function setDefaultOwner() {
+            const ownerSelect = document.getElementById('project-owner');
+            if (ownerSelect && window.currentUserId) {
+                ownerSelect.value = window.currentUserId;
+            }
         }
     }
 
@@ -253,6 +272,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
         
+        // Convert empty owner to null, otherwise convert to integer
+        if (!data.owner) {
+            data.owner = null;
+        } else {
+            data.owner = parseInt(data.owner);
+        }
+        
+        // Convert priority to integer
+        data.priority = parseInt(data.priority);
+        
         try {
             await window.WorklyAPI.request('/projects/', {
                 method: 'POST',
@@ -272,4 +301,93 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Setup filter button
+function setupFilterButton() {
+    const filterMyProjectsBtn = document.getElementById('filter-my-projects');
+    if (filterMyProjectsBtn) {
+        // Remove any existing event listeners by cloning the button
+        const newBtn = filterMyProjectsBtn.cloneNode(true);
+        filterMyProjectsBtn.parentNode.replaceChild(newBtn, filterMyProjectsBtn);
+        
+        // Set initial state
+        if (filterMyProjects) {
+            newBtn.classList.add('btn-active');
+            newBtn.classList.remove('btn-outline');
+        } else {
+            newBtn.classList.remove('btn-active');
+            newBtn.classList.add('btn-outline');
+        }
+        
+        newBtn.addEventListener('click', () => {
+            filterMyProjects = !filterMyProjects;
+            if (filterMyProjects) {
+                newBtn.classList.add('btn-active');
+                newBtn.classList.remove('btn-outline');
+            } else {
+                newBtn.classList.remove('btn-active');
+                newBtn.classList.add('btn-outline');
+            }
+            currentPage = 1;
+            loadProjects();
+        });
+    }
+}
+
+// Load users for project form
+async function loadUsersForProjectForm() {
+    try {
+        const users = await window.WorklyAPI.request('/users/');
+        const userList = Array.isArray(users) ? users : [];
+        const ownerSelect = document.getElementById('project-owner');
+        
+        if (ownerSelect) {
+            ownerSelect.innerHTML = '<option value="">Brak</option>';
+            userList.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.username;
+                ownerSelect.appendChild(option);
+            });
+            
+            // Set default to current user if available
+            if (window.currentUserId) {
+                ownerSelect.value = window.currentUserId;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+}
+
+// Delete project function
+async function deleteProject(projectId, event) {
+    // Get project name from button data attribute
+    const button = event ? event.target.closest('button') : null;
+    const projectName = button ? button.getAttribute('data-project-name') || 'ten projekt' : 'ten projekt';
+    
+    window.showConfirmModal(
+        `Czy na pewno chcesz usunąć projekt "${projectName}"?`,
+        async () => {
+            try {
+                await window.WorklyAPI.request(`/projects/${projectId}/`, {
+                    method: 'DELETE',
+                });
+                
+                // Reload projects
+                loadProjects();
+            } catch (error) {
+                console.error('Error deleting project:', error);
+                let errorMessage = 'Błąd podczas usuwania projektu: ' + error.message;
+                
+                // Check if error is about protected deletion (project has tasks)
+                if (error.message && error.message.includes('zadania')) {
+                    errorMessage = 'Nie można usunąć projektu, który ma przypięte zadania.';
+                }
+                
+                window.showAlertModal(errorMessage);
+            }
+        }
+    );
+}
 

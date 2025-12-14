@@ -1,6 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework import status
+from django.shortcuts import get_object_or_404
 
 from projects.models import Project
 from tasks.models import Task, Dependency
@@ -10,7 +12,7 @@ class GanttProjectView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get(self, request, pk: int):
-        project = Project.objects.get(pk=pk)
+        project = get_object_or_404(Project, pk=pk)
 
         tasks = (
             Task.objects.filter(project=project)

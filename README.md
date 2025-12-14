@@ -69,6 +69,21 @@ Zobacz `README_DEMO.md` dla szczegółów.
 - **`QUICK_START.md`** - Szybki przewodnik startowy
 - **`README_DEMO.md`** - Dokumentacja bazy demo
 - **`README_FRONTEND.md`** - Dokumentacja frontendu
+- **`README_TESTS.md`** - Dokumentacja testów i raportów
+
+## 🧪 Testy i raporty
+
+**Uruchom testy:**
+```bash
+python manage.py test
+```
+
+**Wygeneruj raport HTML z pokryciem kodu:**
+```bash
+python generate_test_report.py
+```
+
+Zobacz `README_TESTS.md` dla szczegółów.
 
 ## 🛠️ Funkcjonalności
 
@@ -131,5 +146,5 @@ Workly2.0/
 
 ## 👥 Autorzy
 
-[Określ autorów]
+Katarzyna Bąk
 

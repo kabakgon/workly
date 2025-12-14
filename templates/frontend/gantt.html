@@ -3,6 +3,87 @@
 
 {% block title %}Diagram Gantta - Workly 2.0{% endblock %}
 
+{% block extra_css %}
+<style>
+    .gantt-mockup {
+        width: 100%;
+        min-height: 600px;
+        background: hsl(var(--b1));
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .mockup-header {
+        background: hsl(var(--b2));
+        border-bottom: 1px solid hsl(var(--bc) / 0.1);
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .mockup-content {
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 500px;
+    }
+    
+    .mockup-icon {
+        width: 120px;
+        height: 120px;
+        margin-bottom: 2rem;
+        opacity: 0.3;
+    }
+    
+    .mockup-tasks {
+        width: 100%;
+        max-width: 800px;
+        margin-top: 2rem;
+    }
+    
+    .mockup-task-row {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        background: hsl(var(--b2));
+        border-radius: 0.5rem;
+        border-left: 4px solid;
+    }
+    
+    .mockup-task-row.todo { border-left-color: #3b82f6; }
+    .mockup-task-row.in_progress { border-left-color: #f59e0b; }
+    .mockup-task-row.review { border-left-color: #8b5cf6; }
+    .mockup-task-row.done { border-left-color: #10b981; }
+    .mockup-task-row.blocked { border-left-color: #ef4444; }
+    
+    .mockup-task-bar {
+        flex: 1;
+        height: 24px;
+        background: hsl(var(--b3));
+        border-radius: 4px;
+        margin: 0 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .mockup-task-progress {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+    
+    .mockup-task-row.todo .mockup-task-progress { background: #3b82f6; }
+    .mockup-task-row.in_progress .mockup-task-progress { background: #f59e0b; }
+    .mockup-task-row.review .mockup-task-progress { background: #8b5cf6; }
+    .mockup-task-row.done .mockup-task-progress { background: #10b981; }
+    .mockup-task-row.blocked .mockup-task-progress { background: #ef4444; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="mb-6">
     <a href="{% url 'frontend:project_detail' project_id %}" class="btn btn-ghost btn-sm mb-4">← Powrót do projektu</a>
@@ -10,21 +91,53 @@
     <p class="text-base-content/70">Wizualizacja harmonogramu projektu</p>
 </div>
 
-<div class="card bg-base-200 shadow-lg">
-    <div class="card-body">
-        <div id="gantt-container" class="overflow-x-auto">
-            <div class="flex justify-center items-center h-64">
-                <span class="loading loading-spinner loading-lg"></span>
+<div class="card bg-base-200 shadow-lg mb-6">
+    <div class="card-body p-0">
+        <div id="gantt-mockup" class="gantt-mockup">
+            <div class="mockup-header">
+                <div>
+                    <h3 class="text-lg font-bold">Diagram Gantta</h3>
+                    <p class="text-sm text-base-content/70">Funkcja w przygotowaniu</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn btn-sm btn-ghost" disabled>Today</button>
+                    <select class="select select-bordered select-sm" disabled>
+                        <option>Month</option>
+                        <option>Day</option>
+                        <option>Year</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mockup-content">
+                <svg class="mockup-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 3V21H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M7 8H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M7 12H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M7 16H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <rect x="3" y="3" width="4" height="3" rx="1" fill="currentColor" opacity="0.5"/>
+                    <rect x="3" y="8" width="8" height="3" rx="1" fill="currentColor" opacity="0.5"/>
+                    <rect x="3" y="13" width="6" height="3" rx="1" fill="currentColor" opacity="0.5"/>
+                </svg>
+                
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold mb-2">Diagram Gantta</h2>
+                    <p class="text-base-content/70 text-lg">Funkcja jest obecnie w przygotowaniu</p>
+                    <p class="text-base-content/60 text-sm mt-2">Wkrótce będzie dostępna pełna wizualizacja harmonogramu projektu z zależnościami między zadaniami</p>
+                </div>
+                
+                <div id="mockup-tasks-list" class="mockup-tasks">
+                    <!-- Tasks will be loaded here -->
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="mt-4 alert alert-info">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-    </svg>
-    <span>Diagram Gantta wymaga biblioteki zewnętrznej (np. dhtmlx-gantt, frappe-gantt). Dane są dostępne w formacie JSON.</span>
+<div id="gantt-info" class="card bg-base-200 shadow-lg">
+    <div class="card-body">
+        <div id="gantt-details" class="space-y-4"></div>
+    </div>
 </div>
 
 {% endblock %}
@@ -37,83 +150,120 @@ document.addEventListener('DOMContentLoaded', async function() {
     try {
         const ganttData = await window.WorklyAPI.request(`/projects/${projectId}/gantt/`);
         
-        const container = document.getElementById('gantt-container');
-        container.innerHTML = `
-            <div class="space-y-4">
-                <h3 class="text-xl font-bold">Zadania (${ganttData.data.length})</h3>
+        const detailsContainer = document.getElementById('gantt-details');
+        const mockupTasksList = document.getElementById('mockup-tasks-list');
+        
+        // Filter out tasks without dates
+        const tasksWithDates = ganttData.data.filter(task => task.start_date && task.end_date);
+        
+        // Display statistics
+        detailsContainer.innerHTML = `
+            <div class="stats stats-vertical lg:stats-horizontal shadow w-full mb-6">
+                <div class="stat">
+                    <div class="stat-title">Wszystkie zadania</div>
+                    <div class="stat-value text-primary">${ganttData.data.length}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Zadania z datami</div>
+                    <div class="stat-value text-secondary">${tasksWithDates.length}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Zależności</div>
+                    <div class="stat-value text-accent">${ganttData.links.length}</div>
+                </div>
+            </div>
+            
+            ${ganttData.links.length > 0 ? `
+            <div class="mt-6">
+                <h3 class="text-xl font-bold mb-4">Zależności między zadaniami</h3>
                 <div class="overflow-x-auto">
-                    <table class="table table-zebra">
+                    <table class="table table-zebra w-full">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Tytuł</th>
-                                <th>Data rozpoczęcia</th>
-                                <th>Data zakończenia</th>
-                                <th>Postęp</th>
-                                <th>Status</th>
+                                <th>Poprzednik</th>
+                                <th>Typ zależności</th>
+                                <th>Następnik</th>
+                                <th>Opóźnienie (dni)</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${ganttData.data.map(task => `
+                            ${ganttData.links.map(link => {
+                                const predecessor = ganttData.data.find(t => t.id === link.source);
+                                const successor = ganttData.data.find(t => t.id === link.target);
+                                const typeLabels = {
+                                    'FS': 'Koniec→Start',
+                                    'SS': 'Start→Start',
+                                    'FF': 'Koniec→Koniec',
+                                    'SF': 'Start→Koniec'
+                                };
+                                return `
                                 <tr>
-                                    <td>${task.id}</td>
-                                    <td class="font-semibold">${task.text}</td>
-                                    <td>${window.WorklyAPI.formatDate(task.start_date)}</td>
-                                    <td>${window.WorklyAPI.formatDate(task.end_date)}</td>
-                                    <td>
-                                        <progress class="progress progress-primary w-24" value="${(task.progress || 0) * 100}" max="100"></progress>
-                                    </td>
-                                    <td>${window.WorklyAPI.getStatusBadge(task.status, 'task')}</td>
+                                    <td class="font-semibold">${predecessor ? predecessor.text : `Zadanie #${link.source}`}</td>
+                                    <td><span class="badge badge-info badge-lg">${link.type}</span> <span class="text-sm text-base-content/70">(${typeLabels[link.type] || link.type})</span></td>
+                                    <td class="font-semibold">${successor ? successor.text : `Zadanie #${link.target}`}</td>
+                                    <td>${link.lag || 0}</td>
                                 </tr>
-                            `).join('')}
+                            `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
-                
-                ${ganttData.links.length > 0 ? `
-                <div class="mt-6">
-                    <h3 class="text-xl font-bold">Zależności (${ganttData.links.length})</h3>
-                    <div class="overflow-x-auto">
-                        <table class="table table-zebra">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Poprzednik</th>
-                                    <th>Typ</th>
-                                    <th>Następnik</th>
-                                    <th>Opóźnienie (dni)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${ganttData.links.map(link => `
-                                    <tr>
-                                        <td>${link.id}</td>
-                                        <td>${link.source}</td>
-                                        <td><span class="badge badge-info">${link.type}</span></td>
-                                        <td>${link.target}</td>
-                                        <td>${link.lag || 0}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                ` : ''}
-                
-                <div class="mt-6">
-                    <h3 class="text-xl font-bold mb-2">Dane JSON</h3>
-                    <pre class="bg-base-300 p-4 rounded-lg overflow-x-auto text-xs"><code>${JSON.stringify(ganttData, null, 2)}</code></pre>
-                </div>
             </div>
+            ` : '<div class="alert alert-info"><span>Brak zależności między zadaniami</span></div>'}
         `;
+        
+        // Display mockup tasks
+        if (tasksWithDates.length > 0) {
+            const statusColors = {
+                'todo': { class: 'todo', color: '#3b82f6' },
+                'in_progress': { class: 'in_progress', color: '#f59e0b' },
+                'review': { class: 'review', color: '#8b5cf6' },
+                'done': { class: 'done', color: '#10b981' },
+                'blocked': { class: 'blocked', color: '#ef4444' }
+            };
+            
+            mockupTasksList.innerHTML = `
+                <h3 class="text-lg font-semibold mb-4">Zadania projektu (${tasksWithDates.length})</h3>
+                ${tasksWithDates.slice(0, 10).map(task => {
+                    const status = task.status || 'todo';
+                    const statusInfo = statusColors[status] || statusColors['todo'];
+                    const progress = Math.min(Math.max((task.progress || 0) * 100, 0), 100);
+                    
+                    // Format dates
+                    const startDate = task.start_date ? new Date(task.start_date).toLocaleDateString('pl-PL') : '-';
+                    const endDate = task.end_date ? new Date(task.end_date).toLocaleDateString('pl-PL') : '-';
+                    
+                    return `
+                        <div class="mockup-task-row ${statusInfo.class}">
+                            <div class="flex-1">
+                                <div class="font-semibold">${task.text || `Zadanie ${task.id}`}</div>
+                                <div class="text-xs text-base-content/70">${startDate} - ${endDate}</div>
+                            </div>
+                            <div class="mockup-task-bar">
+                                <div class="mockup-task-progress" style="width: ${progress}%"></div>
+                            </div>
+                            <div class="text-sm font-medium w-16 text-right">${progress}%</div>
+                        </div>
+                    `;
+                }).join('')}
+                ${tasksWithDates.length > 10 ? `<p class="text-sm text-base-content/70 text-center mt-4">... i ${tasksWithDates.length - 10} więcej zadań</p>` : ''}
+            `;
+        } else {
+            mockupTasksList.innerHTML = `
+                <div class="alert alert-info">
+                    <span>Brak zadań z datami do wyświetlenia</span>
+                </div>
+            `;
+        }
+        
     } catch (error) {
-        document.getElementById('gantt-container').innerHTML = `
-            <div class="alert alert-error">
-                <span>Błąd podczas ładowania diagramu Gantta: ${error.message}</span>
+        console.error('Error loading Gantt data:', error);
+        document.getElementById('gantt-mockup').innerHTML = `
+            <div class="alert alert-error m-4">
+                <span>Błąd podczas ładowania danych: ${error.message}</span>
             </div>
         `;
     }
 });
 </script>
 {% endblock %}
-

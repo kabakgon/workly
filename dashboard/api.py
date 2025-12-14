@@ -135,24 +135,7 @@ class UsersListView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        """Zwraca listę wszystkich użytkowników (id, username)"""
-        users = User.objects.all().order_by('username')
-        data = [
-            {
-                "id": user.id,
-                "username": user.username,
-                "email": getattr(user, 'email', ''),
-            }
-            for user in users
-        ]
-        return Response(data)
-
-
-class UsersListView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        """Zwraca listę wszystkich użytkowników (id, username)"""
+        """Zwraca listę wszystkich użytkowników (id, username, email)"""
         users = User.objects.all().order_by('username')
         data = [
             {

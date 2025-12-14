@@ -113,10 +113,26 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 
 class DependencyViewSet(viewsets.ModelViewSet):
-    queryset = Dependency.objects.select_related("from_task", "to_task").all()
+    queryset = Dependency.objects.select_related("predecessor", "successor", "predecessor__project", "successor__project").all()
     serializer_class = DependencySerializer
 
     def get_permissions(self):
-        from projects.permissions import IsProjectOwnerOrReadOnly
+        from .permissions import IsDependencyProjectOwnerOrReadOnly
 
-        return [IsProjectOwnerOrReadOnly()]
+        return [IsDependencyProjectOwnerOrReadOnly()]
+
+    def perform_create(self, serializer):
+        """Override to catch ValidationError from model."""
+        from django.core.exceptions import ValidationError
+        try:
+            serializer.save()
+        except ValidationError as e:
+            from rest_framework.exceptions import ValidationError as DRFValidationError
+            # Convert Django ValidationError to DRF ValidationError
+            if hasattr(e, 'message_dict'):
+                error_dict = e.message_dict
+            elif hasattr(e, 'messages'):
+                error_dict = {'__all__': e.messages}
+            else:
+                error_dict = {'__all__': [str(e)]}
+            raise DRFValidationError(error_dict)

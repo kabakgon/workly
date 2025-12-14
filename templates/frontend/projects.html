@@ -53,7 +53,13 @@
 <!-- Filters -->
 <div class="card bg-base-200 shadow-lg mb-6">
     <div class="card-body">
-        <div class="flex flex-wrap gap-4">
+        <div class="flex flex-wrap gap-4 items-center">
+            <button id="filter-my-projects" class="btn btn-outline btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Moje projekty
+            </button>
             <select id="filter-status" class="select select-bordered">
                 <option value="">Wszystkie statusy</option>
                 <option value="planned">Planowany</option>
@@ -146,6 +152,14 @@
                     </label>
                 </div>
             </div>
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">Właściciel</span>
+                </label>
+                <select name="owner" id="project-owner" class="select select-bordered">
+                    <option value="">Brak</option>
+                </select>
+            </div>
             <div class="modal-action">
                 <button type="button" onclick="document.getElementById('create-project-modal').close()" class="btn">Anuluj</button>
                 <button type="submit" class="btn btn-primary">Utwórz</button>
@@ -160,6 +174,10 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    // Pass user ID to JavaScript
+    window.currentUserId = {{ user.id|default:"null" }};
+</script>
 <script src="{% static 'js/projects.js' %}" defer></script>
 {% endblock %}
 

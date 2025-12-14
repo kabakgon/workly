@@ -1,0 +1,34 @@
+[run]
+source = .
+omit = 
+    */migrations/*
+    */tests/*
+    */venv/*
+    */env/*
+    */.venv/*
+    manage.py
+    */settings.py
+    */__pycache__/*
+    */static/*
+    */templates/*
+    */node_modules/*
+    generate_test_report.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+    # No coverage
+    # pragma: no cover
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml
+

@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Zarządzaj zależnościami - Workly 2.0{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="mb-6">
+        <a href="{% url 'frontend:project_detail' project_id %}" class="btn btn-ghost btn-sm mb-4">← Powrót do projektu</a>
+        <h1 class="text-3xl font-bold">Zarządzaj zależnościami zadań</h1>
+        <p class="text-base-content/70 mt-2" id="project-name">Ładowanie...</p>
+    </div>
+    
+    <div id="dependencies-content">
+        <div class="flex justify-center items-center h-64">
+            <span class="loading loading-spinner loading-lg"></span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const projectId = {{ project_id }};
+const projectDetailUrl = "{% url 'frontend:project_detail' project_id %}";
+
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadDependencies();
+});
+
+async function loadDependencies() {
+    try {
+        // Load project info
+        const project = await window.WorklyAPI.request(`/projects/${projectId}/`);
+        document.getElementById('project-name').textContent = `Projekt: ${project.name}`;
+        
+        // Load all tasks from project
+        const tasks = await window.WorklyAPI.request(`/tasks/?project=${projectId}`);
+        const taskList = tasks.results || tasks || [];
+        
+        // Load all dependencies for this project
+        const allDependencies = await window.WorklyAPI.request(`/dependencies/`);
+        const depsList = allDependencies.results || allDependencies || [];
+        const projectDeps = depsList.filter(dep => {
+            // Check if both predecessor and successor are in this project
+            return taskList.some(t => t.id === dep.predecessor) && 
+                   taskList.some(t => t.id === dep.successor);
+        });
+        
+        // Create dependencies map for quick lookup
+        const depsMap = new Map();
+        projectDeps.forEach(dep => {
+            if (!depsMap.has(dep.successor)) {
+                depsMap.set(dep.successor, []);
+            }
+            depsMap.get(dep.successor).push(dep);
+        });
+        
+        // Populate content
+        const content = document.getElementById('dependencies-content');
+        if (taskList.length === 0) {
+            content.innerHTML = '<div class="alert alert-info"><p>Brak zadań w projekcie</p></div>';
+        } else {
+            const typeLabels = {
+                'FS': 'Koniec→Start',
+                'SS': 'Start→Start',
+                'FF': 'Koniec→Koniec',
+                'SF': 'Start→Koniec'
+            };
+            
+            content.innerHTML = taskList.map(task => {
+                const taskDeps = depsMap.get(task.id) || [];
+                
+                return `
+                    <div class="card bg-base-200 shadow-lg mb-4" data-task-id="${task.id}">
+                        <div class="card-body">
+                            <h3 class="card-title text-xl mb-4">${task.title}</h3>
+                            
+                            <div class="mb-4">
+                                <h4 class="font-semibold mb-2">Istniejące zależności:</h4>
+                                <div class="space-y-2">
+                                    ${taskDeps.length > 0 ? taskDeps.map(dep => {
+                                        const predecessor = taskList.find(t => t.id === dep.predecessor);
+                                        const predName = predecessor ? predecessor.title : `Zadanie #${dep.predecessor}`;
+                                        const depId = typeof dep.id === 'number' ? dep.id : (dep.id || 0);
+                                        return `
+                                            <div class="flex items-center gap-2 p-3 bg-base-300 rounded-lg">
+                                                <span class="flex-1">
+                                                    <strong>${predName}</strong> 
+                                                    <span class="badge badge-sm badge-info ml-2">${dep.type} (${typeLabels[dep.type] || dep.type})</span>
+                                                    ${dep.lag_days ? `<span class="text-xs ml-2 text-base-content/70">Lag: ${dep.lag_days} dni</span>` : ''}
+                                                </span>
+                                                <button type="button" class="btn btn-xs btn-error" onclick="removeDependency(${depId})">Usuń</button>
+                                            </div>
+                                        `;
+                                    }).join('') : '<p class="text-sm text-base-content/70">Brak zależności</p>'}
+                                </div>
+                            </div>
+                            
+                            <div class="divider"></div>
+                            
+                            <div>
+                                <h4 class="font-semibold mb-2">Dodaj nową zależność:</h4>
+                                <div class="flex gap-2 flex-wrap">
+                                    <select id="dep-predecessor-${task.id}" class="select select-bordered flex-1 min-w-[200px]">
+                                        <option value="">Wybierz zadanie poprzedzające</option>
+                                        ${taskList.filter(t => t.id !== task.id).map(t => 
+                                            `<option value="${t.id}">${t.title}</option>`
+                                        ).join('')}
+                                    </select>
+                                    <select id="dep-type-${task.id}" class="select select-bordered">
+                                        <option value="FS">FS (Koniec→Start)</option>
+                                        <option value="SS">SS (Start→Start)</option>
+                                        <option value="FF">FF (Koniec→Koniec)</option>
+                                        <option value="SF">SF (Start→Koniec)</option>
+                                    </select>
+                                    <input type="number" id="dep-lag-${task.id}" class="input input-bordered w-24" placeholder="Lag" value="0" min="0" />
+                                    <button type="button" class="btn btn-primary" onclick="addDependency(${task.id})">Dodaj</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    } catch (error) {
+        console.error('Error loading dependencies:', error);
+        document.getElementById('dependencies-content').innerHTML = `
+            <div class="alert alert-error">
+                <p>Błąd podczas ładowania zależności: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Add dependency
+async function addDependency(successorId) {
+    const predecessorSelect = document.getElementById(`dep-predecessor-${successorId}`);
+    const typeSelect = document.getElementById(`dep-type-${successorId}`);
+    const lagInput = document.getElementById(`dep-lag-${successorId}`);
+    
+    if (!predecessorSelect || !typeSelect || !lagInput) return;
+    
+    const predecessorId = predecessorSelect.value;
+    const type = typeSelect.value;
+    const lag = parseInt(lagInput.value) || 0;
+    
+    if (!predecessorId) {
+        window.showAlertModal('Wybierz zadanie poprzedzające');
+        return;
+    }
+    
+    try {
+        const dependencyData = {
+            predecessor: parseInt(predecessorId),
+            successor: successorId,
+            type: type,
+            lag_days: lag
+        };
+        
+        await window.WorklyAPI.request('/dependencies/', {
+            method: 'POST',
+            body: JSON.stringify(dependencyData),
+        });
+        
+        // Reload page
+        await loadDependencies();
+    } catch (error) {
+        console.error('Error adding dependency:', error);
+        let errorMessage = 'Błąd podczas dodawania zależności: ' + error.message;
+        
+        if (error.message && error.message.includes('cykl')) {
+            errorMessage = 'Nie można dodać zależności - spowodowałoby to cykl.';
+        } else if (error.message && error.message.includes('projekt')) {
+            errorMessage = 'Oba zadania muszą należeć do tego samego projektu.';
+        } else if (error.message && error.message.includes('samego siebie')) {
+            errorMessage = 'Zadanie nie może zależeć od samego siebie.';
+        }
+        
+        window.showAlertModal(errorMessage);
+    }
+}
+
+// Remove dependency
+async function removeDependency(dependencyId) {
+    // Ensure dependencyId is a number
+    const depId = parseInt(dependencyId);
+    
+    if (!depId || isNaN(depId)) {
+        console.error('Invalid dependency ID:', dependencyId);
+        const errorMsg = 'Błąd: Nieprawidłowe ID zależności';
+        if (window.showAlertModal) {
+            window.showAlertModal(errorMsg);
+        } else {
+            alert(errorMsg);
+        }
+        return;
+    }
+    
+    const confirmMessage = 'Czy na pewno chcesz usunąć tę zależność?';
+    
+    if (window.showConfirmModal) {
+        window.showConfirmModal(
+            confirmMessage,
+            async () => {
+                try {
+                    await window.WorklyAPI.request(`/dependencies/${depId}/`, {
+                        method: 'DELETE',
+                    });
+                    
+                    // Reload page
+                    await loadDependencies();
+                } catch (error) {
+                    console.error('Error removing dependency:', error);
+                    let errorMessage = 'Błąd podczas usuwania zależności';
+                    if (error.message) {
+                        errorMessage += ': ' + error.message;
+                    } else if (error.detail) {
+                        errorMessage += ': ' + error.detail;
+                    }
+                    
+                    if (window.showAlertModal) {
+                        window.showAlertModal(errorMessage);
+                    } else {
+                        alert(errorMessage);
+                    }
+                }
+            }
+        );
+    } else {
+        // Fallback to native confirm if modal function not available
+        if (confirm(confirmMessage)) {
+            try {
+                await window.WorklyAPI.request(`/dependencies/${depId}/`, {
+                    method: 'DELETE',
+                });
+                
+                // Reload page
+                await loadDependencies();
+            } catch (error) {
+                console.error('Error removing dependency:', error);
+                let errorMessage = 'Błąd podczas usuwania zależności';
+                if (error.message) {
+                    errorMessage += ': ' + error.message;
+                } else if (error.detail) {
+                    errorMessage += ': ' + error.detail;
+                }
+                alert(errorMessage);
+            }
+        }
+    }
+}
+</script>
+{% endblock %}
+

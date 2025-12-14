@@ -31,6 +31,13 @@ db.sqlite3-journal
 /staticfiles/
 /media/
 
+# Coverage reports
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+
 # Node
 node_modules/
 npm-debug.log*

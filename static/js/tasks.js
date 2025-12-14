@@ -31,10 +31,7 @@ async function loadTasks() {
             url += '?' + params.join('&');
         }
         
-        console.log('Loading tasks from:', url);
         const response = await window.WorklyAPI.request(url);
-        console.log('Tasks response:', response);
-        
         allTasks = response.results || response || [];
         
         // Load projects to get names
@@ -122,7 +119,10 @@ function renderTasks() {
                             <td>${window.WorklyAPI.formatDate(task.start_date)}</td>
                             <td>${window.WorklyAPI.formatDate(task.end_date)}</td>
                             <td>
-                                <button class="btn btn-sm btn-ghost" onclick="editTask(${task.id})">Edytuj</button>
+                                <div class="flex gap-2">
+                                    <button class="btn btn-sm btn-ghost" onclick="editTask(${task.id})">Edytuj</button>
+                                    <button class="btn btn-sm btn-error" onclick="deleteTask(${task.id}, event)" data-task-title="${(task.title || '').replace(/"/g, '&quot;')}">Usuń</button>
+                                </div>
                             </td>
                         </tr>
                     `;
@@ -149,12 +149,14 @@ async function editTask(taskId) {
         
         // Load projects and set selected project
         await loadProjectsForEditForm();
-        document.getElementById('edit-task-project').value = task.project || '';
+        const projectId = typeof task.project === 'object' ? task.project.id : task.project;
+        document.getElementById('edit-task-project').value = projectId || '';
         
         // Load parent tasks for the project
-        if (task.project) {
-            await loadParentTasksForEditForm(task.project, task.id);
-            document.getElementById('edit-task-parent').value = task.parent || '';
+        if (projectId) {
+            await loadParentTasksForEditForm(projectId, task.id);
+            const parentId = typeof task.parent === 'object' ? task.parent?.id : task.parent;
+            document.getElementById('edit-task-parent').value = parentId || '';
         }
         
         // Load users and set assignee
@@ -520,64 +522,182 @@ async function loadParentTasksForEditForm(projectId, excludeTaskId = null) {
     }
 }
 
-// Event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Check URL parameter for auto-filtering "My Tasks"
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('my_tasks') === 'true') {
-        filterMyTasks = true;
+// Load dependencies for a task (where this task is the successor)
+async function loadDependenciesForTask(taskId, projectId) {
+    try {
+        // Get all dependencies where this task is the successor
+        const dependencies = await window.WorklyAPI.request(`/dependencies/?successor=${taskId}`);
+        const depsList = dependencies.results || dependencies || [];
+        
+        const depsContainer = document.getElementById('edit-dependencies-list');
+        if (!depsContainer) return;
+        
+        if (depsList.length === 0) {
+            depsContainer.innerHTML = '<p class="text-sm text-base-content/70">Brak zależności</p>';
+            return;
+        }
+        
+        // Load all tasks from project to get names
+        const tasks = await window.WorklyAPI.request(`/tasks/?project=${projectId}`);
+        const taskList = tasks.results || tasks || [];
+        const tasksMap = new Map(taskList.map(t => [t.id, t]));
+        
+        depsContainer.innerHTML = depsList.map(dep => {
+            const predecessor = tasksMap.get(dep.predecessor);
+            const predName = predecessor ? predecessor.title : `Zadanie #${dep.predecessor}`;
+            const typeLabels = {
+                'FS': 'Koniec→Start',
+                'SS': 'Start→Start',
+                'FF': 'Koniec→Koniec',
+                'SF': 'Start→Koniec'
+            };
+            
+            return `
+                <div class="flex items-center gap-2 p-2 bg-base-300 rounded" data-dependency-id="${dep.id}">
+                    <span class="flex-1 text-sm">
+                        <strong>${predName}</strong> 
+                        <span class="badge badge-sm badge-info ml-2">${dep.type} (${typeLabels[dep.type] || dep.type})</span>
+                        ${dep.lag_days ? `<span class="text-xs ml-2">Lag: ${dep.lag_days}d</span>` : ''}
+                    </span>
+                    <button type="button" class="btn btn-xs btn-error" onclick="removeDependency(${dep.id}, ${taskId})">Usuń</button>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading dependencies:', error);
+        const depsContainer = document.getElementById('edit-dependencies-list');
+        if (depsContainer) {
+            depsContainer.innerHTML = '<p class="text-sm text-error">Błąd podczas ładowania zależności</p>';
+        }
+    }
+}
+
+// Load tasks for dependency predecessor dropdown
+async function loadTasksForDependencyDropdown(projectId, excludeTaskId) {
+    try {
+        const tasks = await window.WorklyAPI.request(`/tasks/?project=${projectId}`);
+        const taskList = tasks.results || tasks || [];
+        const predecessorSelect = document.getElementById('edit-dependency-predecessor');
+        
+        if (predecessorSelect) {
+            predecessorSelect.innerHTML = '<option value="">Wybierz zadanie poprzedzające</option>';
+            taskList.filter(t => t.id !== excludeTaskId).forEach(task => {
+                const option = document.createElement('option');
+                option.value = task.id;
+                option.textContent = task.title;
+                predecessorSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading tasks for dependency dropdown:', error);
+    }
+}
+
+// Add dependency
+async function addDependency(taskId) {
+    const predecessorSelect = document.getElementById('edit-dependency-predecessor');
+    const typeSelect = document.getElementById('edit-dependency-type');
+    const lagInput = document.getElementById('edit-dependency-lag');
+    
+    if (!predecessorSelect || !typeSelect || !lagInput) return;
+    
+    const predecessorId = predecessorSelect.value;
+    const type = typeSelect.value;
+    const lag = parseInt(lagInput.value) || 0;
+    
+    if (!predecessorId) {
+        window.showAlertModal('Wybierz zadanie poprzedzające');
+        return;
     }
     
-    // Wait for WorklyAPI to be available
-    if (typeof window.WorklyAPI === 'undefined') {
-        setTimeout(() => {
-            if (typeof window.WorklyAPI !== 'undefined') {
-                loadTasks();
-                setupTaskForm();
-                setupFilterButton();
-            } else {
-                console.error('WorklyAPI is not available');
-                document.getElementById('tasks-content').innerHTML = `
-                    <div class="alert alert-error">
-                        <span>Błąd: WorklyAPI nie jest dostępne. Odśwież stronę.</span>
-                    </div>
-                `;
-            }
-        }, 100);
-    } else {
-        loadTasks();
-        setupTaskForm();
-        setupEditTaskForm();
-        setupFilterButton();
+    try {
+        const dependencyData = {
+            predecessor: parseInt(predecessorId),
+            successor: taskId,
+            type: type,
+            lag_days: lag
+        };
+        
+        await window.WorklyAPI.request('/dependencies/', {
+            method: 'POST',
+            body: JSON.stringify(dependencyData),
+        });
+        
+        // Reload dependencies list
+        const task = await window.WorklyAPI.request(`/tasks/${taskId}/`);
+        await loadDependenciesForTask(taskId, task.project);
+        
+        // Clear form
+        predecessorSelect.value = '';
+        typeSelect.value = 'FS';
+        lagInput.value = '0';
+        
+        // Reload tasks dropdown (in case we need to update it)
+        await loadTasksForDependencyDropdown(task.project, taskId);
+    } catch (error) {
+        console.error('Error adding dependency:', error);
+        let errorMessage = 'Błąd podczas dodawania zależności: ' + error.message;
+        
+        // Check for specific error messages
+        if (error.message && error.message.includes('cykl')) {
+            errorMessage = 'Nie można dodać zależności - spowodowałoby to cykl.';
+        } else if (error.message && error.message.includes('projekt')) {
+            errorMessage = 'Oba zadania muszą należeć do tego samego projektu.';
+        } else if (error.message && error.message.includes('samego siebie')) {
+            errorMessage = 'Zadanie nie może zależeć od samego siebie.';
+        }
+        
+        window.showAlertModal(errorMessage);
     }
-});
+}
+
+// Remove dependency
+async function removeDependency(dependencyId, taskId) {
+    window.showConfirmModal(
+        'Czy na pewno chcesz usunąć tę zależność?',
+        async () => {
+            try {
+                await window.WorklyAPI.request(`/dependencies/${dependencyId}/`, {
+                    method: 'DELETE',
+                });
+                
+                // Reload dependencies list
+                const task = await window.WorklyAPI.request(`/tasks/${taskId}/`);
+                await loadDependenciesForTask(taskId, task.project);
+            } catch (error) {
+                console.error('Error removing dependency:', error);
+                window.showAlertModal('Błąd podczas usuwania zależności: ' + error.message);
+            }
+        }
+    );
+}
 
 // Setup filter button
 function setupFilterButton() {
     // Filter: My Tasks button
     const filterMyTasksBtn = document.getElementById('filter-my-tasks');
     if (filterMyTasksBtn) {
+        // Remove any existing event listeners by cloning the button
+        const newBtn = filterMyTasksBtn.cloneNode(true);
+        filterMyTasksBtn.parentNode.replaceChild(newBtn, filterMyTasksBtn);
+        
         // Set initial state if filter is active
         if (filterMyTasks) {
-            filterMyTasksBtn.classList.add('btn-active');
-            filterMyTasksBtn.classList.remove('btn-outline');
+            newBtn.classList.add('btn-active');
+            newBtn.classList.remove('btn-outline');
         } else {
-            filterMyTasksBtn.classList.remove('btn-active');
-            filterMyTasksBtn.classList.add('btn-outline');
+            newBtn.classList.remove('btn-active');
+            newBtn.classList.add('btn-outline');
         }
         
-        filterMyTasksBtn.addEventListener('click', () => {
+        newBtn.addEventListener('click', () => {
             filterMyTasks = !filterMyTasks;
             if (filterMyTasks) {
-                filterMyTasksBtn.classList.add('btn-active');
-                filterMyTasksBtn.classList.remove('btn-outline');
+                newBtn.classList.add('btn-active');
+                newBtn.classList.remove('btn-outline');
             } else {
-                filterMyTasksBtn.classList.remove('btn-active');
-                filterMyTasksBtn.classList.add('btn-outline');
-                // Remove my_tasks parameter from URL when filter is turned off
-                const url = new URL(window.location);
-                url.searchParams.delete('my_tasks');
-                window.history.replaceState({}, '', url);
+                newBtn.classList.remove('btn-active');
+                newBtn.classList.add('btn-outline');
             }
             loadTasks();
         });
@@ -586,19 +706,14 @@ function setupFilterButton() {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // Check URL parameter for auto-filtering "My Tasks"
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('my_tasks') === 'true') {
-        filterMyTasks = true;
-    }
-    
     // Wait for WorklyAPI to be available
     if (typeof window.WorklyAPI === 'undefined') {
         setTimeout(() => {
             if (typeof window.WorklyAPI !== 'undefined') {
+                setupFilterButton();
                 loadTasks();
                 setupTaskForm();
-                setupFilterButton();
+                setupEditTaskForm();
             } else {
                 console.error('WorklyAPI is not available');
                 document.getElementById('tasks-content').innerHTML = `
@@ -609,18 +724,50 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 100);
     } else {
+        setupFilterButton();
         loadTasks();
         setupTaskForm();
         setupEditTaskForm();
-        setupFilterButton();
     }
     
-    document.getElementById('filter-status').addEventListener('change', loadTasks);
+    // Setup status filter
+    const statusFilter = document.getElementById('filter-status');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', loadTasks);
+    }
     
-    let searchTimeout;
-    document.getElementById('search-input').addEventListener('input', (e) => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(loadTasks, 500);
-    });
+    // Setup search input
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadTasks, 500);
+        });
+    }
 });
+
+// Delete task function
+async function deleteTask(taskId, event) {
+    // Get task title from button data attribute
+    const button = event ? event.target.closest('button') : null;
+    const taskTitle = button ? button.getAttribute('data-task-title') || 'to zadanie' : 'to zadanie';
+    
+    window.showConfirmModal(
+        `Czy na pewno chcesz usunąć zadanie "${taskTitle}"?`,
+        async () => {
+            try {
+                await window.WorklyAPI.request(`/tasks/${taskId}/`, {
+                    method: 'DELETE',
+                });
+                
+                // Reload tasks
+                loadTasks();
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                window.showAlertModal('Błąd podczas usuwania zadania: ' + error.message);
+            }
+        }
+    );
+}
 

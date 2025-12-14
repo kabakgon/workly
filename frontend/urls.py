@@ -10,6 +10,7 @@ urlpatterns = [
     path('projects/', views.projects_list, name='projects_list'),
     path('projects/<int:pk>/', views.project_detail, name='project_detail'),
     path('projects/<int:pk>/gantt/', views.project_gantt, name='project_gantt'),
+    path('projects/<int:pk>/dependencies/', views.project_dependencies, name='project_dependencies'),
     path('tasks/', views.tasks_list, name='tasks_list'),
 ]
 

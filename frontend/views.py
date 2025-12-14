@@ -66,3 +66,8 @@ def project_detail(request, pk):
 def project_gantt(request, pk):
     return render(request, 'frontend/gantt.html', {'project_id': pk})
 
+
+@login_required
+def project_dependencies(request, pk):
+    return render(request, 'frontend/dependencies.html', {'project_id': pk})
+

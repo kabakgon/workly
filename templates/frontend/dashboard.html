@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         Data rozpoczęcia: ${window.WorklyAPI.formatDate(summary.next_task.start_date)}
                     </p>
                     <div class="card-actions justify-end">
-                        <a href="{% url 'frontend:tasks_list' %}?my_tasks=true" class="btn btn-primary btn-sm">Zobacz zadania</a>
+                        <a href="{% url 'frontend:tasks_list' %}" class="btn btn-primary btn-sm">Zobacz zadania</a>
                     </div>
                 </div>
             </div>

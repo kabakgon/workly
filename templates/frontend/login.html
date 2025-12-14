@@ -422,6 +422,82 @@
             flex-shrink: 0;
         }
 
+        /* Modal Styles */
+        .modal {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-box {
+            background: rgba(26, 16, 61, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            color: white;
+            max-width: 500px;
+        }
+
+        .modal-box h3 {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .modal-box p {
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .modal-box .btn-close {
+            background: linear-gradient(135deg, #ff006e 0%, #8338ec 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 16px;
+            display: block;
+            width: 100%;
+        }
+
+        .modal-box form[method="dialog"] {
+            display: flex;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .modal-box .btn-close:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 0, 110, 0.4);
+        }
+
+        .modal-box .contact-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .modal-box .contact-info p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .modal-box .contact-info a {
+            color: #ff006e;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .modal-box .contact-info a:hover {
+            color: white;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 480px) {
             .login-card {
@@ -442,6 +518,11 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 16px;
+            }
+
+            .modal-box {
+                margin: 20px;
+                padding: 24px;
             }
         }
     </style>
@@ -524,7 +605,7 @@
                             Zapamiętaj mnie
                         </span>
                     </label>
-                    <a href="{% url 'admin:index' %}" class="forgot-password">Zapomniałeś hasła?</a>
+                    <a href="#" onclick="event.preventDefault(); document.getElementById('forgot-password-modal').showModal();" class="forgot-password">Zapomniałeś hasła?</a>
                 </div>
                 
                 <!-- Submit Button -->
@@ -537,7 +618,7 @@
             <div class="signup-link">
                 <p>
                     Nie masz konta? 
-                    <a href="{% url 'admin:index' %}">Skontaktuj się z administratorem</a>
+                    <a href="#" onclick="event.preventDefault(); document.getElementById('contact-admin-modal').showModal();">Skontaktuj się z administratorem</a>
                 </p>
             </div>
         </div>
@@ -563,5 +644,43 @@
             });
         }
     </script>
+
+    <!-- Forgot Password Modal -->
+    <dialog id="forgot-password-modal" class="modal">
+        <div class="modal-box">
+            <h3>Zapomniałeś hasła?</h3>
+            <p>Aby zresetować hasło, skontaktuj się z administratorem systemu.</p>
+            <div class="contact-info">
+                <p><strong>Opcje kontaktu:</strong></p>
+                <p>📧 Email: <a href="mailto:admin@workly.demo?subject=Reset hasła&body=Witam,%0D%0A%0D%0AProszę o reset hasła dla mojego konta.%0D%0A%0D%0APozdrawiam">admin@workly.demo</a></p>
+                <p>🔗 Panel administracyjny: <a href="{% url 'admin:index' %}" target="_blank">Otwórz panel</a></p>
+            </div>
+            <form method="dialog">
+                <button class="btn-close">Zamknij</button>
+            </form>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>zamknij</button>
+        </form>
+    </dialog>
+
+    <!-- Contact Administrator Modal -->
+    <dialog id="contact-admin-modal" class="modal">
+        <div class="modal-box">
+            <h3>Skontaktuj się z administratorem</h3>
+            <p>Aby utworzyć nowe konto lub uzyskać pomoc, skontaktuj się z administratorem systemu.</p>
+            <div class="contact-info">
+                <p><strong>Opcje kontaktu:</strong></p>
+                <p>📧 Email: <a href="mailto:admin@workly.demo?subject=Prośba o utworzenie konta&body=Witam,%0D%0A%0D%0AProszę o utworzenie konta w systemie Workly 2.0.%0D%0A%0D%0AMoje dane:%0D%0A- Imię i nazwisko:%0D%0A- Email:%0D%0A- Stanowisko:%0D%0A%0D%0APozdrawiam">admin@workly.demo</a></p>
+                <p>🔗 Panel administracyjny: <a href="{% url 'admin:index' %}" target="_blank">Otwórz panel</a></p>
+            </div>
+            <form method="dialog">
+                <button class="btn-close">Zamknij</button>
+            </form>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>zamknij</button>
+        </form>
+    </dialog>
 </body>
 </html>

@@ -138,6 +138,7 @@ class Dependency(models.Model):
     class Meta:
         verbose_name = "Zależność"
         verbose_name_plural = "Zależności"
+        ordering = ["id"]
         constraints = [
             # zakaz duplikatów: ten sam łuk + typ tylko raz
             models.UniqueConstraint(

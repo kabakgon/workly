@@ -85,6 +85,54 @@ python generate_test_report.py
 
 Zobacz `README_TESTS.md` dla szczegółów.
 
+## 📸 Screenshots
+
+<div align="center">
+
+### Strona logowania
+![Login Page](docs/screenshots/login.png)
+*Glassmorphism design z motywem Synthwave*
+
+### Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+*Podsumowanie projektów i zadań użytkownika*
+
+### Lista projektów
+![Projects List](docs/screenshots/projects-list.png)
+*Lista projektów z filtrowaniem i wyszukiwaniem*
+
+### Szczegóły projektu
+![Project Detail](docs/screenshots/projects-list.png)
+*Szczegóły projektu z listą zadań i akcjami*
+
+### Lista zadań
+![Tasks List](docs/screenshots/tasks-list.png)
+*Lista zadań z filtrowaniem i statusami*
+
+### Diagram Gantta
+![Gantt Chart](docs/screenshots/gantt.png)
+*Wizualizacja harmonogramu projektu (mockup)*
+
+### Zarządzanie zależnościami
+![Dependencies](docs/screenshots/dependencies.png)
+*Zarządzanie zależnościami między zadaniami*
+
+### Przełącznik motywów
+![Theme Switcher](docs/screenshots/theme-switcher.png)
+*Przełącznik między motywem Synthwave i Jasnym*
+
+### Modal tworzenia projektu
+![New Project](docs/screenshots/new-project.png)
+*Formularz tworzenia nowego projektu*
+
+### Modal tworzenia zadania
+![New Task](docs/screenshots/new-task.png)
+*Formularz tworzenia nowego zadania*
+
+</div>
+
+> **Uwaga:** Jeśli screenshoty nie są jeszcze dostępne, zobacz `docs/SCREENSHOTS.md` dla instrukcji jak je dodać.
+
 ## 🛠️ Funkcjonalności
 
 ### ✅ Zaimplementowane:

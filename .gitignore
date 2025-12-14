@@ -59,3 +59,7 @@ static/css/output.css
 # OS
 .DS_Store
 Thumbs.db
+
+# Screenshots (opcjonalnie - jeśli chcesz je w repo, usuń tę linię)
+# docs/screenshots/*.png
+# docs/screenshots/*.jpg

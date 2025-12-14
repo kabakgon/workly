@@ -3,7 +3,6 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth import get_user_model
 from projects.models import Project
 from django.core.exceptions import ValidationError
-from django.db.models import Q, F
 
 User = get_user_model()
 
@@ -147,7 +146,7 @@ class Dependency(models.Model):
             ),
             # zakaz zależności zadania od samego siebie
             models.CheckConstraint(
-                check=~Q(predecessor=F("successor")),
+                condition=models.Q(("predecessor", models.F("successor")), _negated=True),
                 name="no_self_dependency",
             ),
         ]
